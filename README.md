@@ -22,7 +22,14 @@
 * monai 0.9.0
 
 
+### Training
+If you want to train the model from scratch, run the training script as following.  
+python train.py
 
+
+### Testing
+If you want to test the model which has been trained on the BraTS 2020, VerSe 2019, ACDC dataset, run the testing script as following.  
+python test.py
 
 
 
