@@ -36,10 +36,11 @@ If you want to test the model which has been trained on the BraTS 2020, VerSe 20
 
 ### Citation
 If you use our code or models in your work or find it is helpful, please cite the corresponding paper:  
-
+`
 @article{you2023learning,
   title={Learning with Explicit Shape Priors for Medical Image Segmentation},
   author={You, Xin and He, Junjun and Yang, Jie and Gu, Yun},
   journal={arXiv preprint arXiv:2303.17967},
   year={2023}
 }
+''
