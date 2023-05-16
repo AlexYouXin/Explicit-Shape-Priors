@@ -24,7 +24,7 @@ This repo is the official implementation for: [Learning with Explicit Shape Prio
 
 ### Training
 If you want to train the model from scratch, run the training script as following.  
-'python train.py'
+'python train.py''
 
 
 ### Testing
