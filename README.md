@@ -7,7 +7,7 @@ This repo is the official implementation for: [Learning with Explicit Shape Prio
 
 
 
-### Dataset Link
+# Dataset Link
 [BraTS 2020: Multimodal Brain Tumor Segmentation Challenge 2020](https://www.med.upenn.edu/cbica/brats2020/data.html)  
 
 [VerSe'19: Large Scale Vertebrae Segmentation Challenge](https://verse2019.grand-challenge.org/)  
@@ -16,7 +16,7 @@ This repo is the official implementation for: [Learning with Explicit Shape Prio
 
 
 
-### Requirements
+# Requirements
 * python 3.7  
 * pytorch 1.8.0  
 * torchvision 0.9.0  
@@ -24,19 +24,19 @@ This repo is the official implementation for: [Learning with Explicit Shape Prio
 * monai 0.9.0
 
 
-### Training
+# Training
 If you want to train the model from scratch, run the training script as following.  
 `python train.py`
 
 
-### Testing
+# Testing
 If you want to test the model which has been trained on the BraTS 2020, VerSe 2019, ACDC dataset, run the testing script as following.  
 `python test.py`
 
 
 
 
-### Citation
+# Citation
 If you use our code or models in your work or find it is helpful, please cite the corresponding paper:  
 ```
 @article{you2023learning,
