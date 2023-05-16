@@ -23,7 +23,8 @@
 
 
 ### Citation
-If you use our code or models in your work or find it is helpful, please cite the corresponding paper:
+If you use our code or models in your work or find it is helpful, please cite the corresponding paper:  
+
 @article{you2023learning,
   title={Learning with Explicit Shape Priors for Medical Image Segmentation},
   author={You, Xin and He, Junjun and Yang, Jie and Gu, Yun},
