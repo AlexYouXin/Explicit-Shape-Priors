@@ -7,9 +7,8 @@
 
 
 ### Dataset Link
-![BraTS 2020](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9363945)
-![VerSe 2019](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9363945)
-![ACDC](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9363945) 
+[BraTS 2020](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9363945)
+
 
 
 
