@@ -14,7 +14,10 @@
 
 
 
-
+### Requirements
+* python 3.7  
+* pytorch 1.8.0  
+* torchvision 0.9.0  
 
 
 
