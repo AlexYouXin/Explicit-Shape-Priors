@@ -2,7 +2,7 @@
 
 
 
-### This is the official pytorch implementation of "Learning with Explicit Shape Priors for Medical Image Segmentation".
+This repo is the official implementation for: [Learning with Explicit Shape Priors for Medical Image Segmentation](https://arxiv.org/abs/2303.17967)
 
 
 
