@@ -11,7 +11,7 @@ This repo is the official implementation for: [Learning with Explicit Shape Prio
 [Automated Cardiac Diagnosis Challenge (ACDC)](https://www.creatis.insa-lyon.fr/Challenge/acdc/databases.html)  
 
 # Preprocess
-We follow the normalization strategy in [nnUNet](https://github.com/MIC-DKFZ/nnUNet) to preprocess the BraTS 2020, VerSe'19 and ACDC dataset.
+We follow the z-score normalization strategy in [nnUNet](https://github.com/MIC-DKFZ/nnUNet) to preprocess the BraTS 2020, VerSe'19 and ACDC dataset.
 
 # Requirements
 * python 3.7  
