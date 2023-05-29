@@ -27,12 +27,6 @@ If you want to train the model from scratch, run the training script as followin
 `python VerSe_train.py`  
 `python ACDC_train.py`
 
-# Testing
-If you want to test the model which has been trained on the BraTS 2020, VerSe 2019, ACDC dataset, run the testing script as following.  
-`python BraTS_test.py`  
-`python VerSe_test.py`  
-`python ACDC_test.py`
-
 
 # Citation
 If you use our code or models in your work or find it is helpful, please cite the corresponding paper:  
