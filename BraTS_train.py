@@ -114,6 +114,6 @@ if __name__ == "__main__":
         net = nn.DataParallel(net)
 
     # train the network
-    transunet = {'BraTS': run_main,}
-    transunet[dataset_name](args, net, snapshot_path)
+    run_model = {'BraTS': run_main,}
+    run_model[dataset_name](args, net, snapshot_path)
 
