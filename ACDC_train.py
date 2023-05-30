@@ -116,6 +116,6 @@ if __name__ == "__main__":
 
 
     # train the network
-    transunet = {'ACDC': run_main,}
-    transunet[dataset_name](args, net, snapshot_path)
+    run_model = {'ACDC': run_main,}
+    run_model[dataset_name](args, net, snapshot_path)
 
