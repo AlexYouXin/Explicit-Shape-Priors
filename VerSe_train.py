@@ -115,6 +115,6 @@ if __name__ == "__main__":
     net = network(in_channel=3, out_channel=args.num_classes, training=False, config=config_vit).cuda()
 
     # train the network
-    transunet = {'VerSe': run_main,}
-    transunet[dataset_name](args, net, snapshot_path)
+    run_model = {'VerSe': run_main,}
+    run_model[dataset_name](args, net, snapshot_path)
 
