@@ -1,4 +1,5 @@
 # coding=utf-8
+# Partial codes inferenced from TransUNet (https://github.com/Beckschen/TransUNet)
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -14,7 +15,7 @@ import torch.nn.functional as F
 from . resnet_skip import ResNetV2
 from torch.nn import CrossEntropyLoss, Dropout, Softmax, Linear, Conv2d, Conv3d, LayerNorm
 from . import vit_seg_configs as configs
-
+from . SPM import SPM
 
 
 CONFIGS = {
@@ -68,12 +69,11 @@ class network(nn.Module):
         self.down = nn.MaxPool3d(kernel_size=2, stride=2)
         self.up = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=True)
 
-        self.cluster1 = SPM(config, self.skip_channels[0], 2)
-        self.cluster2 = SPM(config, self.skip_channels[1], 4)
-        self.cluster3 = SPM(config, self.skip_channels[2], 8)
-        # self.cluster4 = SPM(config, channels[0], 16)
+        self.spm1 = SPM(config, self.skip_channels[0], 2)
+        self.spm2 = SPM(config, self.skip_channels[1], 4)
+        self.spm3 = SPM(config, self.skip_channels[2], 8)
         
-        self.cluster_center = nn.Parameter(torch.randn(1, out_channel, config.n_patches))
+        self.learnable_shape_prior = nn.Parameter(torch.randn(1, out_channel, config.n_patches))
 
         self.segmentation_head = nn.Conv3d(channels[0], out_channel, kernel_size=3, padding=1)
 
@@ -86,23 +86,23 @@ class network(nn.Module):
         
         
         x, features = self.hybrid_model(t1)
-        cluster_center = self.cluster_center.repeat(B,1,1)
+        learnable_shape_prior = self.learnable_shape_prior.repeat(B,1,1)
         
         
-        class_feature1, refined_center = self.cluster1(features[0], cluster_center)
+        class_feature1, refined_shape_prior = self.spm1(features[0], learnable_shape_prior)
         x = self.up(x)
         x = torch.cat((x, class_feature1), 1)
         x = self.decoder1(x)
         
 
-        class_feature2, refined_center = self.cluster2(features[1], refined_center)
+        class_feature2, refined_shape_prior = self.spm2(features[1], refined_shape_prior)
         x = self.up(x)
         x = torch.cat((x, class_feature2), 1)
         x = self.decoder2(x)
         
 
         # feature_before = features[2]
-        class_feature3, refined_center = self.cluster3(features[2], refined_center)
+        class_feature3, refined_shape_prior = self.spm3(features[2], refined_shape_prior)
         # feature_after = class_feature3
         x = self.up(x)
         x = torch.cat((x, class_feature3), 1)
@@ -222,75 +222,7 @@ class Block(nn.Module):
         x = x + h
         return x
 
-class self_update_block(nn.Module):
-    def __init__(self, config):
-        super(self_update_block, self).__init__()
-        num_layers = 2
-        self.layer = nn.ModuleList()
-        self.encoder_norm = LayerNorm(config.n_patches, eps=1e-6)
-        for _ in range(num_layers):
-            layer = Block(config)
-            self.layer.append(copy.deepcopy(layer))
 
-    def forward(self, class_center):
-        for layer_block in self.layer:
-            class_center = layer_block(class_center)
-
-        encoded = self.encoder_norm(class_center)
-        
-        return encoded
-
-class cross_update_block(nn.Module):
-    def __init__(self, n_class):
-        super(cross_update_block, self).__init__()
-        self.n_class = n_class
-        self.softmax = Softmax(dim=-1)
-
-    def forward(self, class_center, feature):
-        class_feature = torch.matmul(feature.flatten(2), class_center.flatten(2).transpose(-1, -2))
-        # scale
-        class_feature = class_feature / math.sqrt(self.n_class)
-        class_feature = self.softmax(class_feature)
-
-        class_feature = torch.einsum("ijk, iklhw->ijlhw", class_feature, class_center)
-        class_feature = feature + class_feature
-        return class_feature
-
-
-
-class SPM(nn.Module):
-    def __init__(self, config, in_channel, scale):
-        super(SPM, self).__init__()
-        self.scale = scale
-        self.SUB = self_update_block(config)
-        self.CUB  = cross_update_block(config.n_classes)
-        self.resblock1 = DecoderResBlock(in_channel, in_channel)
-        self.resblock2 = DecoderResBlock(in_channel, in_channel)
-        self.resblock3 = DecoderResBlock(in_channel, config.n_classes)
-        self.h = config.h
-        self.w = config.w
-        self.l = config.l
-        self.dim = in_channel
-        self.softmax = Softmax(dim=-1)
-
-        
-    def forward(self, feature, class_center):
-        b, n_class, _ = class_center.size()
-        B = feature.size()[0]
-        # self update
-        class_center = self.SUB(class_center)
-        previous_class_center = class_center
-        class_center = F.interpolate(class_center.contiguous().view(b, n_class, self.h, self.w, self.l), scale_factor=self.scale, mode="trilinear")
-        feature = self.resblock1(feature)
-        feature = self.resblock2(feature)
-        
-        # cross update
-        class_feature = self.CUB(class_center, feature)
-        
-
-        class_center = F.interpolate(self.resblock3(class_feature), scale_factor=(1.0 / self.scale), mode="trilinear").flatten(2) + previous_class_center
-
-        return class_feature, class_center
         
 
 
