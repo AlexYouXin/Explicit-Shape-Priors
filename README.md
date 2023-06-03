@@ -28,6 +28,12 @@ If you want to train the model from scratch, run the training script as followin
 `python ACDC_train.py`
 
 
+# Testing
+If you want to test the model, run the testing script as following.  
+`python BraTS_test.py`  
+`python VerSe_test.py`  
+`python ACDC_test.py`
+
 # Citation
 If you use our code or models in your work or find it is helpful, please cite the corresponding paper:  
 ```
