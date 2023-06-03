@@ -79,4 +79,209 @@ def calculate_metric_percase(pred, gt):
 
 
 
+# x and y: 512 * 512
+
+def test_single_volume(image_, label_, net0, net1, net2, net3, net4, classes, patch_size, test_save_path=None, case=None, origin=None, spacing=None):   # patch_size: [256, 256]
+    image_, label_ = image_.squeeze(0).cpu().detach().numpy(), label_.squeeze(0).cpu().detach().numpy()
+    edge = 3
+    # preprocess
+    label_[label_ < 0.5] = 0.0  # maybe some voxels is a minus value
+    label_[label_ > 3.5] = 0.0
+    
+    # label_ = np.round(label_)
+    z, y, x = image_.shape[0], image_.shape[1], image_.shape[2]
+    print('previous image shape: ', image_.shape[0], image_.shape[1], image_.shape[2])
+    
+    min_value = np.min(image_)
+    
+    image = image_
+    label = label_
+    
+    index = np.nonzero(label)
+    index = np.transpose(index)
+    z_min = np.min(index[:, 0])
+    z_max = np.max(index[:, 0])
+    y_min = np.min(index[:, 1])
+    y_max = np.max(index[:, 1])
+    x_min = np.min(index[:, 2])
+    x_max = np.max(index[:, 2])
+    
+    
+    # z padding
+    image = np.pad(image, ((np.int(patch_size[0] * 3 / 8), np.int(patch_size[0] * 3 / 8)), (0, 0), (0, 0)), 'constant', constant_values=min_value)         # /2
+    label = np.pad(label, ((np.int(patch_size[0] * 3 / 8), np.int(patch_size[0] * 3 / 8)), (0, 0), (0, 0)), 'constant', constant_values=0)
+    # y padding
+    image = np.pad(image, ((0, 0), (np.int(patch_size[1] * 3 / 8), np.int(patch_size[1] * 3 / 8)), (0, 0)), 'constant', constant_values=min_value)
+    label = np.pad(label, ((0, 0), (np.int(patch_size[1] * 3 / 8), np.int(patch_size[1] * 3 / 8)), (0, 0)), 'constant', constant_values=0)
+    # x padding
+    image = np.pad(image, ((0, 0), (0, 0), (np.int(patch_size[2] * 3 / 8), np.int(patch_size[2] * 3 / 8))), 'constant', constant_values=min_value)
+    label = np.pad(label, ((0, 0), (0, 0), (np.int(patch_size[2] * 3 / 8), np.int(patch_size[2] * 3 / 8))), 'constant', constant_values=0)
+    
+    image = image[z_min: z_max + np.int(patch_size[0] * 3 / 4), y_min: y_max + np.int(patch_size[1] * 3 / 4), x_min: x_max + np.int(patch_size[2] * 3 / 4)]    
+    label = label[z_min: z_max + np.int(patch_size[0] * 3 / 4), y_min: y_max + np.int(patch_size[1] * 3 / 4), x_min: x_max + np.int(patch_size[2] * 3 / 4)]
+    
+    print('cropped image shape: ', image.shape[0], image.shape[1], image.shape[2])
+    
+    step_size_z = np.int(patch_size[0]/8)
+    step_size_y = np.int(patch_size[1]/8)
+    step_size_x = np.int(patch_size[2]/8)
+    
+    
+    if len(image.shape) == 3:
+
+        z_num = np.ceil(image.shape[0] / step_size_z).astype(int)
+        y_num = np.ceil(image.shape[1] / step_size_y).astype(int)
+        x_num = np.ceil(image.shape[2] / step_size_x).astype(int)
+
+        # add padding to size： n * step
+        delta_z = np.int(z_num * step_size_z - image.shape[0])
+        delta_y = np.int(y_num * step_size_y - image.shape[1])
+        delta_x = np.int(x_num * step_size_x - image.shape[2])
+
+        # z_padding
+        if delta_z % 2 == 0:
+            delta_z_d = np.int(delta_z / 2)
+            delta_z_u = np.int(delta_z / 2)
+        else:
+            delta_z_d = np.int(delta_z / 2)
+            delta_z_u = np.int(delta_z / 2) + 1
+        image = np.pad(image, ((delta_z_d, delta_z_u), (0, 0), (0, 0)), 'constant', constant_values=min_value)
+        label = np.pad(label, ((delta_z_d, delta_z_u), (0, 0), (0, 0)), 'constant', constant_values=0.0)
+        # y_padding
+        if delta_y % 2 == 0:
+            delta_y_d = np.int(delta_y / 2)
+            delta_y_u = np.int(delta_y / 2)
+        else:
+            delta_y_d = np.int(delta_y / 2)
+            delta_y_u = np.int(delta_y / 2) + 1
+        image = np.pad(image, ((0, 0), (delta_y_d, delta_y_u), (0, 0)), 'constant', constant_values=min_value)
+        label = np.pad(label, ((0, 0), (delta_y_d, delta_y_u), (0, 0)), 'constant', constant_values=0.0)
+        # x_padding
+        if delta_x % 2 == 0:
+            delta_x_d = np.int(delta_x / 2)
+            delta_x_u = np.int(delta_x / 2)
+        else:
+            delta_x_d = np.int(delta_x / 2)
+            delta_x_u = np.int(delta_x / 2) + 1
+        image = np.pad(image, ((0, 0), (0, 0), (delta_x_d, delta_x_u)), 'constant', constant_values=min_value)
+        label = np.pad(label, ((0, 0), (0, 0), (delta_x_d, delta_x_u)), 'constant', constant_values=0.0)
+        
+        print('padding image shape:', image.shape[0], image.shape[1], image.shape[2])
+
+        prediction = np.zeros_like(label)
+
+        z_num = np.int((image.shape[0] - patch_size[0]) / step_size_z) + 1
+        y_num = np.int((image.shape[1] - patch_size[1]) / step_size_y) + 1
+        x_num = np.int((image.shape[2] - patch_size[2]) / step_size_x) + 1
+
+        ######
+        torch.cuda.synchronize()
+        start_time = time.time()
+
+        origin = origin.flatten()
+        spacing = spacing.flatten()
+        origin = origin.numpy()
+        spacing = spacing.numpy()
+        with torch.no_grad():
+            pred = np.zeros((classes, image.shape[0], image.shape[1], image.shape[2]))
+            center_list = np.zeros((4, classes, np.int(patch_size[0]/4), np.int(patch_size[1]/16), np.int(patch_size[2]/16)))
+            global_center_list = np.zeros((3, classes, np.int(patch_size[0]/4), np.int(patch_size[1]/16), np.int(patch_size[2]/16)))
+            local_center_list = np.zeros((3, classes, np.int(patch_size[0]/4), np.int(patch_size[1]/16), np.int(patch_size[2]/16)))
+            ###########
+            for h in range(z_num):
+                for r in range(y_num):
+                    for c in range(x_num):
+                        # numpy to tensor
+                        input = torch.from_numpy(image[h * step_size_z: h * step_size_z + patch_size[0],
+                                                 r * step_size_y: r * step_size_y + patch_size[1],
+                                                 c * step_size_x: c * step_size_x + patch_size[2]]).unsqueeze(0).unsqueeze(
+                            0).float().cuda()
+
+                        outputs0 = net0(input)  # not do slices in tensor
+                        outputs1 = net1(input)
+                        outputs2 = net2(input)
+                        outputs3 = net3(input)
+                        outputs4 = net4(input)
+
+                        outputs0 = torch.softmax(outputs0, dim=1).squeeze(0)
+                        outputs1 = torch.softmax(outputs1, dim=1).squeeze(0)
+                        outputs2 = torch.softmax(outputs2, dim=1).squeeze(0)
+                        outputs3 = torch.softmax(outputs3, dim=1).squeeze(0)
+                        outputs4 = torch.softmax(outputs4, dim=1).squeeze(0)
+                        
+                        outputs = outputs0 + outputs1 + outputs2 + outputs3 + outputs4
+                        outputs = outputs.cpu().detach().numpy()
+
+
+                        pred[:, h * step_size_z: h * step_size_z + patch_size[0],
+                                                 r * step_size_y: r * step_size_y + patch_size[1],
+                                                 c * step_size_x: c * step_size_x + patch_size[2]] += outputs
+                                                 
+                        
+            out = np.argmax(pred, axis=0)
+            prediction = out
+        torch.cuda.synchronize()
+        end_time = time.time()
+        
+        time_cost = end_time - start_time
+
+    index = np.nonzero(label)
+    index = np.transpose(index)
+    z_min = np.min(index[:, 0])
+    z_max = np.max(index[:, 0])
+    y_min = np.min(index[:, 1])
+    y_max = np.max(index[:, 1])
+    x_min = np.min(index[:, 2])
+    x_max = np.max(index[:, 2])
+    
+    flatten_label = label.flatten()
+    list_label = flatten_label.tolist()
+    set_label = set(list_label)
+    print('different values:', set_label)
+    length = len(set_label)
+    # print('number of different values: ', length)
+    list_label_ = list(set_label)
+    list_label_ = np.array(list_label_).astype(np.int)
+    
+    
+    index = np.zeros(classes)
+    metric_list = np.zeros((classes, 2))
+    for i in range(1, length):
+        metric_list[list_label_[i], :] = calculate_metric_percase(prediction[z_min: z_max, y_min: y_max, x_min: x_max] == list_label_[i], label[z_min: z_max, y_min: y_max, x_min: x_max] == list_label_[i])
+        index[list_label_[i]] += 1
+    
+
+    binary_map = prediction[z_min: z_max, y_min: y_max, x_min: x_max].copy()
+    binary_map[binary_map >= 1] = 1
+    binary_map[binary_map < 1] = 0
+    
+    binary_label = label[z_min: z_max, y_min: y_max, x_min: x_max].copy()
+    binary_label[binary_label >= 1] = 1
+    binary_label[binary_label < 1] = 0
+    
+    binary_metric = calculate_metric_percase(binary_map, binary_label)
+
+    if test_save_path is not None:
+        img_itk = sitk.GetImageFromArray(image.astype(np.float32))            # .astype(np.float32)
+        prd_itk = sitk.GetImageFromArray(prediction.astype(np.float32))
+        lab_itk = sitk.GetImageFromArray(label.astype(np.float32))
+
+        print('origin and spacing: ', origin, spacing)   
+ 
+        img_itk.SetOrigin(origin)
+        img_itk.SetSpacing(spacing)
+        prd_itk.SetOrigin(origin)
+        prd_itk.SetSpacing(spacing)
+        lab_itk.SetOrigin(origin)
+        lab_itk.SetSpacing(spacing)
+
+        
+        sitk.WriteImage(prd_itk, test_save_path + '/'+case + "_pred.nii.gz")
+        sitk.WriteImage(img_itk, test_save_path + '/'+ case + "_img.nii.gz")
+        sitk.WriteImage(lab_itk, test_save_path + '/'+ case + "_gt.nii.gz")
+    return metric_list, index, binary_metric, time_cost
+
+
+
+
 
