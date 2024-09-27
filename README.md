@@ -37,10 +37,10 @@ If you want to test the model, run the testing script as following.
 # Citation
 If you use our code or models in your work or find it is helpful, please cite the corresponding paper:  
 ```
-@article{you2023learning,
+@article{you2024learning,
   title={Learning with Explicit Shape Priors for Medical Image Segmentation},
   author={You, Xin and He, Junjun and Yang, Jie and Gu, Yun},
-  journal={arXiv preprint arXiv:2303.17967},
-  year={2023}
+  journal={IEEE Transactions on Medical Imaging},
+  year={2024}
 }
 ```
